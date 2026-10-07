@@ -1,0 +1,5 @@
+*,*::before,*::after{box-sizing:border-box}
+body,h1,h2,h3,p,figure{margin:0}
+button,input{font:inherit;color:inherit}
+button{border:0;background:none;padding:0;cursor:pointer}
+img,svg,canvas{display:block;max-width:100%}
