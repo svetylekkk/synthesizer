@@ -1,0 +1,357 @@
+/* ==========================================================================
+   Сцена сада: VoicePanel, Garden, Pad (Flower, Cloud, Heart, Star), Petal,
+   Sun, DayStrip, MasterStrip, Timeline.
+   Классы совпадают с именами функций в scene.js.
+   ========================================================================== */
+
+/* ---------- VoicePanel — голос целиком ---------- */
+.VoicePanel {
+  --accent: var(--ink);
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 196px;
+  gap: 10px;
+  padding: var(--space-3);
+  border: var(--border);
+  border-radius: var(--radius-l);
+  overflow: hidden;
+  min-height: 0;
+}
+.VoicePanel .Knob {
+  --accent: inherit;
+}
+.VoicePanel__Header {
+  position: absolute;
+  left: var(--space-3);
+  top: var(--space-3);
+  z-index: 1;
+}
+.VoicePanel--drops {
+  --accent: var(--rose-700);
+  background: linear-gradient(160deg, var(--rose-100), var(--rose-300) 60%, var(--rose-500));
+}
+.VoicePanel--wind {
+  --accent: var(--lilac-700);
+  background: linear-gradient(160deg, var(--lilac-100), var(--lilac-300) 60%, var(--lilac-500));
+}
+.VoicePanel--hearts {
+  --accent: var(--pink-700);
+  background: linear-gradient(160deg, var(--sky-100), var(--sky-300) 60%, var(--sky-500));
+}
+.VoicePanel--stars {
+  --accent: var(--violet-700);
+  background: linear-gradient(160deg, var(--paper), var(--sky-100) 55%, var(--lilac-300));
+}
+.VoicePanel.is-muted .Garden {
+  filter: grayscale(0.8);
+  opacity: 0.45;
+}
+
+/* ---------- Garden — площадка с пэдами ---------- */
+.Garden {
+  position: relative;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: opacity 0.3s;
+}
+.Garden__Decor {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.Garden__Stem {
+  fill: none;
+  stroke: url(#gradStem);
+  stroke-width: 20;
+  stroke-linecap: round;
+}
+.Garden__Breeze {
+  fill: none;
+  stroke: var(--lime);
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-dasharray: 14 12;
+  opacity: 0.85;
+}
+.Garden--wind.is-playing .Garden__Breeze {
+  animation: breeze 1.6s linear infinite;
+}
+.Garden__Orbit {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.75);
+  stroke-width: 12;
+}
+@keyframes breeze {
+  to {
+    stroke-dashoffset: -52;
+  }
+}
+
+/* ---------- Pad — общий для всех пэдов ---------- */
+.Pad {
+  position: absolute;
+  width: var(--size);
+  height: var(--size);
+  translate: -50% -50%;
+  cursor: pointer;
+}
+.Pad > svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  rotate: var(--turn);
+  transition: transform 0.25s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+.Pad__Label {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px 3px 2px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--paper);
+  font-size: 11px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.Pad__Key {
+  display: grid;
+  place-items: center;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 5px;
+  background: var(--lilac-100);
+  font: inherit;
+  font-size: 10px;
+}
+
+/* Flower — капля: подпись под цветком */
+.Flower__Shape {
+  fill: url(#gradPetal);
+}
+.Flower__Core {
+  fill: rgba(255, 255, 255, 0.55);
+  transition: fill 0.15s;
+}
+.Flower .Pad__Label {
+  top: 100%;
+  translate: -50% -2px;
+  padding: 2px;
+  gap: 0;
+}
+.Flower.is-active > svg {
+  transform: scale(1.2) rotate(24deg);
+}
+.Flower.is-active .Flower__Core {
+  fill: var(--paper);
+}
+
+/* Cloud — аккорд ветра */
+.Cloud__Shape {
+  fill: url(#gradCloud);
+}
+.Cloud.is-active > svg {
+  animation: breathe 2.4s ease-in-out infinite;
+}
+@keyframes breathe {
+  0%,
+  100% {
+    transform: scale(1.12);
+  }
+  50% {
+    transform: scale(1.04) rotate(30deg);
+  }
+}
+
+/* Heart — бас сердца: бьётся в темпе (--beat ставит Stepper темпа) */
+.Heart__Shape {
+  fill: rgba(255, 255, 255, 0.25);
+  stroke: url(#gradHeart);
+  stroke-width: 13;
+  stroke-linejoin: round;
+}
+.Heart.is-active > svg {
+  animation: heartbeat var(--beat, 0.667s) ease-out infinite;
+}
+@keyframes heartbeat {
+  0%,
+  45%,
+  100% {
+    transform: scale(1);
+  }
+  10% {
+    transform: scale(1.16);
+  }
+  28% {
+    transform: scale(1.1);
+  }
+}
+
+/* Star — арпеджио звёзд: мерцает и вращается */
+.Star__Shape {
+  fill: url(#gradStar);
+}
+.Star.is-active > svg {
+  animation: twinkle var(--beat, 0.667s) linear infinite;
+}
+@keyframes twinkle {
+  0% {
+    transform: scale(1.15) rotate(0);
+  }
+  50% {
+    transform: scale(1.02) rotate(45deg);
+  }
+  100% {
+    transform: scale(1.15) rotate(90deg);
+  }
+}
+
+.Petal {
+  position: absolute;
+  width: 10px;
+  height: 15px;
+  border-radius: 50% 0;
+  background: var(--rose-700);
+  pointer-events: none;
+  animation: petal 0.9s ease-out forwards;
+}
+@keyframes petal {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(0) scale(0.6);
+  }
+  to {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) rotate(var(--spin)) scale(1);
+  }
+}
+
+/* ---------- Sun — солнце на орбите суток ---------- */
+.Sun {
+  width: 220px;
+  height: 220px;
+  border: var(--border);
+  border-radius: 50%;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+  outline: none;
+}
+.Sun:active {
+  cursor: grabbing;
+}
+.Sun:focus-visible {
+  box-shadow: 0 0 0 3px var(--ink);
+}
+.Sun__Canvas {
+  width: 100%;
+  height: 100%;
+}
+
+/* ---------- DayStrip / MasterStrip ---------- */
+.DayStrip,
+.MasterStrip {
+  display: grid;
+  align-content: space-between;
+  padding: var(--space-3);
+  border: var(--border);
+  border-radius: var(--radius-m);
+  background: var(--glass);
+  min-height: 0;
+}
+.DayStrip .Pill,
+.MasterStrip .Pill {
+  height: 28px;
+  justify-self: start;
+}
+.DayStrip__Buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.DayStrip__Button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--paper);
+  font-size: 12px;
+  font-weight: 800;
+  transition: transform 0.1s;
+}
+/* точка — цвет неба этого часа */
+.DayStrip__Button::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--sky);
+  box-shadow: 0 0 0 1px rgba(42, 37, 96, 0.15);
+}
+.DayStrip__Button:active {
+  transform: scale(0.95);
+}
+.DayStrip__Button[aria-pressed='true'] {
+  background: var(--ink);
+  color: var(--paper);
+}
+.MasterStrip {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+}
+.MasterStrip .Pill {
+  grid-column: 1 / -1;
+}
+.MasterStrip__Meters {
+  display: flex;
+  gap: var(--space-2);
+  height: 64px;
+  padding-right: var(--space-4);
+}
+
+/* ---------- Timeline — лента произведения ---------- */
+.Timeline {
+  display: grid;
+  grid-template-columns: 82px 1fr;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  border: var(--border);
+  border-radius: var(--radius-l);
+  background: var(--glass);
+}
+.Timeline__Lanes {
+  display: grid;
+  row-gap: 4px;
+}
+.Timeline__Lanes .Pill {
+  height: 20px;
+  align-self: center;
+  justify-content: center;
+  font-size: 11px;
+  color: var(--paper);
+}
+.Pill--drops {
+  background: var(--rose-700);
+}
+.Pill--wind {
+  background: var(--lilac-700);
+}
+.Pill--hearts {
+  background: var(--pink-700);
+}
+.Pill--stars {
+  background: var(--violet-700);
+}
+.Timeline__Canvas {
+  width: 100%;
+  height: 112px;
+}

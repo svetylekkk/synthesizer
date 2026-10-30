@@ -6,27 +6,57 @@
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
-    <title>Rainbow Duo</title>
+    <title>Сад звуков</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&display=swap"
     />
-    <link rel="stylesheet" href="reset.css" />
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="styles/reset.css" />
+    <link rel="stylesheet" href="styles/tokens.css" />
+    <link rel="stylesheet" href="styles/layout.css" />
+    <link rel="stylesheet" href="styles/components.css" />
+    <link rel="stylesheet" href="styles/scene.css" />
   </head>
   <body>
-    <div id="Start">
-      <button class="Button" id="StartButton">Начать играть</button>
-    </div>
-    <main class="Page">
-      <header class="Page__Header">
-        <h1>Rainbow Duo</h1>
-      </header>
-      <div id="App" class="App"></div>
-    </main>
+    <!-- Общие градиенты для SVG-элементов сада -->
+    <svg class="SvgDefs" aria-hidden="true">
+      <defs>
+        <linearGradient id="gradPetal" gradientUnits="userSpaceOnUse" x1="-50" y1="-50" x2="50" y2="50">
+          <stop offset="0" stop-color="#ff9ab4" />
+          <stop offset="1" stop-color="#e2295a" />
+        </linearGradient>
+        <linearGradient id="gradStem" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#aab8fa" />
+          <stop offset="1" stop-color="#7c8ff0" />
+        </linearGradient>
+        <linearGradient id="gradHeart" gradientUnits="userSpaceOnUse" x1="-50" y1="-50" x2="50" y2="50">
+          <stop offset="0" stop-color="#ffd2ef" />
+          <stop offset="1" stop-color="#f07ec0" />
+        </linearGradient>
+        <radialGradient id="gradStar" gradientUnits="userSpaceOnUse" cx="0" cy="0" r="50">
+          <stop offset="0" stop-color="#f3eaff" />
+          <stop offset="1" stop-color="#9a7cf2" />
+        </radialGradient>
+        <linearGradient id="gradCloud" gradientUnits="userSpaceOnUse" x1="-56" y1="-56" x2="56" y2="56">
+          <stop offset="0" stop-color="#ffffff" />
+          <stop offset=".5" stop-color="#f9cde6" />
+          <stop offset="1" stop-color="#b8b4ff" />
+        </linearGradient>
+      </defs>
+    </svg>
+
+    <main id="Stage" class="Stage"></main>
+    <p class="RotateHint">Поверни устройство горизонтально — сад раскрывается в ширину</p>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
-    <script src="script.js"></script>
+    <script src="scripts/score.js"></script>
+    <script src="scripts/engine.js"></script>
+    <script src="scripts/take.js"></script>
+    <script src="scripts/components.js"></script>
+    <script src="scripts/scene.js"></script>
+    <script src="scripts/voices.js"></script>
+    <script src="scripts/main.js"></script>
   </body>
 </html>
