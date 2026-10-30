@@ -55,8 +55,9 @@ const Looper = (() => {
     if (origin === null) {
       // первый слой: такт отсчёта с ближайшей доли, затем запись
       origin = Math.ceil(start / BEAT) * BEAT + BAR
-      start = origin
     }
+    // во время отсчёта запись любого голоса ждёт начала круга
+    start = Math.max(start, origin)
     const layer = { voice, start, end: start + loopTicks(), hits: [], part: null }
     recording = layer
     // конец круга закрывает именно этот слой, даже если таймер сработает поздно

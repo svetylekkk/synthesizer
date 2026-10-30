@@ -75,6 +75,11 @@ function playHit(voice, hit, time) {
 }
 Looper.listen(playHit)
 
+async function recordLayer(voice) {
+  await Tone.start()
+  Looper.record(voice)
+}
+
 /* ---------- Запись пьесы ---------- */
 
 // Пока звучит запись пьесы, лупы молчат — они уже есть внутри неё
@@ -128,10 +133,7 @@ const panels = VOICE_PANELS.map(({ voice, tag, garden, chain }) => {
   gardens[voice] = garden(pads[voice])
   layerControls[voice] = LayerControls({
     voice,
-    onRecord: async () => {
-      await Tone.start()
-      Looper.record(voice)
-    },
+    onRecord: () => recordLayer(voice),
     onUndo: () => Looper.undo(voice),
     onClear: () => Looper.clearVoice(voice)
   })
@@ -212,7 +214,8 @@ Object.keys(gardens).forEach((voice) =>
   })
 )
 
-// e.code — физическая клавиша, поэтому работает и в русской раскладке
+// e.code — физическая клавиша, поэтому работает и в русской раскладке.
+// Shift + клавиша голоса включает запись его слоя (см. keydown ниже).
 const keyCode = (key) => (/\d/.test(key) ? `Digit${key}` : `Key${key.toUpperCase()}`)
 const keymap = new Map(
   Object.entries(pads).flatMap(([voice, list]) => list.map((pad, i) => [keyCode(pad.key), [voice, i]]))
@@ -226,7 +229,9 @@ addEventListener('keydown', (e) => {
   } else if (e.code === 'KeyR') {
     toggleRecord()
   } else if (keymap.has(e.code)) {
-    press(...keymap.get(e.code))
+    const [voice, index] = keymap.get(e.code)
+    // Shift + клавиша голоса — записать круг этого голоса
+    e.shiftKey ? recordLayer(voice) : press(voice, index)
   }
 })
 addEventListener('keyup', (e) => {

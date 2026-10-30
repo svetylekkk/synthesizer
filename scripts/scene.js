@@ -200,7 +200,7 @@ function LayerControls({ voice, onRecord, onUndo, onClear }) {
     `<span class="LayerControls__Dot"></span><span class="LayerControls__Count"></span>`
   )
   record.type = 'button'
-  record.title = 'Записать круг этого голоса'
+  record.title = 'Записать круг этого голоса (Shift + клавиша голоса)'
   record.onclick = onRecord
   const iconButton = (icon, title, onClick) => {
     const b = el('button', 'LayerControls__Button', icon)
