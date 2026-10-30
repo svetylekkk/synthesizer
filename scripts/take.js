@@ -1,6 +1,7 @@
 /* ==========================================================================
    Take — запись сыгранного произведения.
-   События: { time, voice, index, type: 'on' | 'off' } для пэдов и
+   События: { time, voice, index, type: 'on' | 'off' } — живая игра,
+   { time, voice, index, type: 'hit', notes, duration } — нота из лупа,
    { time, voice: 'day', type: 'set', value } — движение солнца.
    Параллельно мастер-шина пишется в аудиофайл (Tone.Recorder).
    Воспроизведение проигрывает события заново через инструмент —
@@ -26,8 +27,9 @@ const Take = (() => {
     state = 'recording'
   }
 
-  function log(voice, index, type, extra) {
-    if (state === 'recording') events.push({ time: clock(), voice, index, type, ...extra })
+  // delay — через сколько секунд событие прозвучит (ноты лупов планируются заранее)
+  function log(voice, index, type, extra, delay = 0) {
+    if (state === 'recording') events.push({ time: clock() + delay, voice, index, type, ...extra })
   }
 
   function play({ onEvent, onEnd }) {
@@ -62,13 +64,15 @@ const Take = (() => {
     audio = null
   }
 
-  // Пары on/off → отрезки нот для ленты; незакрытые тянутся до конца
+  // Пары on/off и ноты лупов → отрезки для ленты; незакрытые тянутся до конца
   function notes() {
     const open = {}
     const bars = []
     for (const e of events) {
       const id = e.voice + e.index
-      if (e.type === 'on') {
+      if (e.type === 'hit') {
+        bars.push({ voice: e.voice, index: e.index, start: e.time, end: e.time + e.duration })
+      } else if (e.type === 'on') {
         open[id] = { voice: e.voice, index: e.index, start: e.time, end: null }
         bars.push(open[id])
       } else if (e.type === 'off' && open[id]) {

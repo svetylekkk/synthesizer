@@ -1,5 +1,6 @@
 /* ==========================================================================
-   Сборка инструмента: сцена ← UI-кит, звук ← Engine, запись ← Take. Здесь же — ввод: мышь/тач по пэдам и клавиатура.
+   Сборка инструмента: сцена ← UI-кит, звук ← Engine, слои ← Looper,
+   запись пьесы ← Take. Здесь же — ввод: мышь/тач по пэдам и клавиатура.
    ========================================================================== */
 
 /* ---------- Игра ---------- */
@@ -60,12 +61,34 @@ function glideDay(to) {
   glide = requestAnimationFrame(step)
 }
 
-/* ---------- Запись ---------- */
+/* ---------- Лупер ---------- */
+
+// Движок сообщает о каждой ноте — лупер забирает её в записываемый слой
+Engine.listen(Looper.capture)
+
+// Нота из слоя: звучит, отзывается в саду и попадает в запись пьесы
+function playHit(voice, hit, time) {
+  const duration = Tone.Ticks(hit.length).toSeconds()
+  Engine.play(voice, hit.notes, duration, time)
+  Take.log(voice, hit.index, 'hit', { notes: hit.notes, duration }, time - Tone.now())
+  Tone.Draw.schedule(() => gardens[voice].echo(hit.index, duration * 1000), time)
+}
+Looper.listen(playHit)
+
+/* ---------- Запись пьесы ---------- */
+
+// Пока звучит запись пьесы, лупы молчат — они уже есть внутри неё
+let loopsWerePaused = false
 
 async function stopTake() {
   const wasPlaying = Take.state === 'playing'
   await Take.stop()
-  if (wasPlaying) releaseAll()
+  if (wasPlaying) endPlayback()
+}
+
+function endPlayback() {
+  releaseAll()
+  Looper.setPaused(loopsWerePaused)
 }
 
 async function toggleRecord() {
@@ -82,21 +105,44 @@ async function togglePlay() {
   if (Take.state === 'recording') await stopTake()
   await Tone.start()
   cancelAnimationFrame(glide)
+  loopsWerePaused = Looper.paused
+  Looper.setPaused(true)
   Take.play({
     onEvent: (e) => {
       if (e.voice === 'day') return setDay(e.value, { fromTake: true })
+      if (e.type === 'hit') {
+        Engine.play(e.voice, e.notes, e.duration)
+        return gardens[e.voice].echo(e.index, e.duration * 1000)
+      }
       ;(e.type === 'on' ? press : lift)(e.voice, e.index, { fromTake: true })
     },
-    onEnd: releaseAll
+    onEnd: endPlayback
   })
 }
 
 /* ---------- Сцена ---------- */
 
 const gardens = {}
+const layerControls = {}
 const panels = VOICE_PANELS.map(({ voice, tag, garden, chain }) => {
   gardens[voice] = garden(pads[voice])
-  return VoicePanel({ voice, tag, garden: gardens[voice].root, chain })
+  layerControls[voice] = LayerControls({
+    voice,
+    onRecord: async () => {
+      await Tone.start()
+      Looper.record(voice)
+    },
+    onUndo: () => Looper.undo(voice),
+    onClear: () => Looper.clearVoice(voice)
+  })
+  return VoicePanel({ voice, tag, garden: gardens[voice].root, chain, layers: layerControls[voice].root })
+})
+
+const loopStrip = LoopStrip({
+  onBars: Looper.setBars,
+  onMetronome: Looper.setMetronome,
+  onPause: () => Looper.setPaused(!Looper.paused),
+  onClear: Looper.clearAll
 })
 
 const sun = Sun({
@@ -128,7 +174,7 @@ const stage = document.getElementById('Stage')
 
 const header = el('header', 'StageHeader')
 header.append(
-  Pill({ text: 'R — запись · Space — слушать', modifier: 'light' }),
+  loopStrip.root,
   transport.root,
   // темп — общий для ритмических голосов (сердце, звёзды)
   Stepper({
@@ -200,6 +246,8 @@ setDay(dayPhase, { fromTake: true })
 ;(function frame() {
   requestAnimationFrame(frame)
   sun.draw(dayPhase, dayName)
+  loopStrip.update(Looper)
+  for (const voice in layerControls) layerControls[voice].update(Looper.status(voice))
   dayStrip.update(SCORE.day.findIndex((d) => d.name === dayName))
   timeline.draw()
   updateMeters()

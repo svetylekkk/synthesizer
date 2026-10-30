@@ -25,6 +25,9 @@
   left: var(--space-3);
   top: var(--space-3);
   z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
 }
 .VoicePanel--drops {
   --accent: var(--rose-700);
@@ -145,6 +148,9 @@
   padding: 2px;
   gap: 0;
 }
+.Pad.is-echo > svg {
+  transform: scale(1.12);
+}
 .Flower.is-active > svg {
   transform: scale(1.2) rotate(24deg);
 }
@@ -230,6 +236,123 @@
     opacity: 0;
     transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) rotate(var(--spin)) scale(1);
   }
+}
+
+/* ---------- LayerControls — слои голоса ---------- */
+.LayerControls {
+  display: flex;
+  gap: var(--space-1);
+  padding: 3px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.55);
+}
+.LayerControls__Record,
+.LayerControls__Button {
+  display: grid;
+  place-items: center;
+  height: 28px;
+  min-width: 28px;
+  border-radius: var(--radius-pill);
+  background: var(--paper);
+  font-size: 13px;
+  font-weight: 800;
+}
+.LayerControls__Button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.LayerControls__Record {
+  display: flex;
+  gap: var(--space-1);
+  padding: 0 var(--space-2);
+}
+.LayerControls__Dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--rose-700);
+}
+.LayerControls__Count {
+  font-size: 12px;
+}
+.LayerControls__Count:empty {
+  display: none;
+}
+/* отсчёт — точка мигает в такт; запись — кнопка заполняется по кругу */
+.LayerControls__Record[data-state='counting'] .LayerControls__Dot {
+  animation: blink var(--beat, 0.667s) steps(2, start) infinite;
+}
+.LayerControls__Record[data-state='recording'] {
+  background: conic-gradient(var(--rose-700) calc(var(--progress) * 360deg), var(--rose-300) 0);
+  color: var(--paper);
+}
+.LayerControls__Record[data-state='recording'] .LayerControls__Dot {
+  background: var(--paper);
+}
+@keyframes blink {
+  to {
+    visibility: hidden;
+  }
+}
+
+/* ---------- LoopStrip — круг лупера в шапке ---------- */
+.LoopStrip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 44px;
+  padding: 0 var(--space-1) 0 var(--space-3);
+  border-radius: var(--radius-pill);
+  background: var(--glass);
+  font-size: 13px;
+}
+.LoopStrip__Name {
+  margin-right: 2px;
+}
+.LoopStrip .ToggleButton {
+  height: 32px;
+  min-width: 32px;
+  justify-content: center;
+  font-size: 15px;
+  background: var(--paper);
+}
+.LoopStrip .ToggleButton[aria-pressed='true'] {
+  background: var(--ink);
+}
+.LoopStrip__Beats {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 2px;
+  width: 72px;
+  height: 16px;
+  align-items: center;
+}
+.LoopStrip__Beat {
+  height: 8px;
+  border-radius: 2px;
+  background: var(--paper);
+}
+.LoopStrip__Beat.is-bar {
+  height: 14px;
+}
+.LoopStrip__Beat.is-current {
+  background: var(--ink);
+}
+.LoopStrip__Beat.is-counting {
+  background: var(--rose-700);
+}
+.LoopStrip__Button {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--paper);
+  font-size: 12px;
+  font-weight: 800;
+}
+.LoopStrip__Button:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 /* ---------- Sun — солнце на орбите суток ---------- */

@@ -43,12 +43,19 @@ function Garden({ voice, pads, type, shape, layout, decor = '', compact = false,
     })
   )
   root.append(...nodes)
+  const echoTimers = []
   return {
     root,
     setActive(index, on) {
       nodes[index].classList.toggle('is-active', on)
       root.classList.toggle('is-playing', nodes.some((n) => n.classList.contains('is-active')))
       if (on) onActive?.(root, nodes[index])
+    },
+    // отклик на ноту из лупа — короткая вспышка, не мешает живой игре
+    echo(index, ms) {
+      nodes[index].classList.add('is-echo')
+      clearTimeout(echoTimers[index])
+      echoTimers[index] = setTimeout(() => nodes[index].classList.remove('is-echo'), Math.max(120, ms))
     }
   }
 }
@@ -141,9 +148,10 @@ const StarsGarden = (pads) =>
 
 /* ---------- Голос целиком ---------- */
 
-/* VoicePanel: сад + цепочка эффектов. chain — описание звеньев:
+/* VoicePanel: сад + цепочка эффектов + кнопки слоёв лупера.
+   chain — описание звеньев:
    [{ effect, name, knobs: [{ prop, name, min, max, scale, format, commit }] }] */
-function VoicePanel({ voice, tag, garden, chain }) {
+function VoicePanel({ voice, tag, garden, chain, layers }) {
   const { effects, channel } = Engine.voices[voice]
   const node = el('section', cls('VoicePanel', voice))
   node.dataset.param = voice
@@ -174,9 +182,101 @@ function VoicePanel({ voice, tag, garden, chain }) {
   )
 
   const header = el('header', 'VoicePanel__Header')
-  header.append(Pill({ text: tag }))
+  header.append(Pill({ text: tag }), layers)
   node.append(header, garden, EffectChain({ param: `${voice}.chain`, modules }))
   return node
+}
+
+/* ---------- Лупер ---------- */
+
+/* LayerControls — слои голоса: ● записать круг, ↶ отменить слой, ✕ стереть.
+   На кнопке записи — число слоёв, во время записи она заполняется по кругу. */
+function LayerControls({ voice, onRecord, onUndo, onClear }) {
+  const node = el('div', 'LayerControls')
+  node.dataset.param = `${voice}.layers`
+  const record = el(
+    'button',
+    'LayerControls__Record',
+    `<span class="LayerControls__Dot"></span><span class="LayerControls__Count"></span>`
+  )
+  record.type = 'button'
+  record.title = 'Записать круг этого голоса'
+  record.onclick = onRecord
+  const iconButton = (icon, title, onClick) => {
+    const b = el('button', 'LayerControls__Button', icon)
+    b.type = 'button'
+    b.title = title
+    b.onclick = onClick
+    return b
+  }
+  const undo = iconButton(
+    '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3 2 6l3 3"/><path d="M2 6h7a4 4 0 0 1 0 8H7"/></svg>',
+    'Отменить последний слой',
+    onUndo
+  )
+  const clear = iconButton('✕', 'Стереть все слои голоса', onClear)
+  node.append(record, undo, clear)
+  const count = record.querySelector('.LayerControls__Count')
+
+  function update({ state, layers, progress }) {
+    record.dataset.state = state
+    record.style.setProperty('--progress', progress)
+    count.textContent = layers || ''
+    undo.disabled = !layers && state === 'idle'
+    clear.disabled = undo.disabled
+  }
+  return { root: node, update }
+}
+
+/* LoopStrip — круг целиком: длина, метроном, доли круга, пауза, стереть */
+function LoopStrip({ onBars, onMetronome, onPause, onClear }) {
+  const node = el('div', 'LoopStrip')
+  node.dataset.param = 'looper'
+  const bars = Segmented({
+    title: 'Длина круга в тактах',
+    param: 'looper.bars',
+    options: [2, 4, 8].map((n) => ({ value: n, label: n })),
+    value: 4,
+    onChange: onBars
+  })
+  const beats = el('div', 'LoopStrip__Beats')
+  const pause = el('button', 'LoopStrip__Button', '❚❚')
+  pause.type = 'button'
+  pause.title = 'Пауза лупов'
+  pause.onclick = onPause
+  const clear = el('button', 'LoopStrip__Button', '✕')
+  clear.type = 'button'
+  clear.title = 'Стереть все слои'
+  clear.onclick = onClear
+  node.append(
+    el('span', 'LoopStrip__Name', 'круг'),
+    bars.root,
+    ToggleButton({ param: 'looper.metronome', name: '♩', onChange: onMetronome }),
+    beats,
+    pause,
+    clear
+  )
+
+  let cells = []
+  function update(looper) {
+    bars.setDisabled(looper.locked)
+    pause.textContent = looper.paused ? '▶' : '❚❚'
+    pause.disabled = clear.disabled = !looper.locked
+    const position = looper.position()
+    const total = looper.bars * 4
+    if (cells.length !== total) {
+      beats.replaceChildren(...Array.from({ length: total }, () => el('span', 'LoopStrip__Beat')))
+      cells = [...beats.children]
+    }
+    cells.forEach((cell, i) => {
+      const counting = position && position.beat < 0
+      cell.classList.toggle('is-current', !!position && !counting && ((position.beat % total) + total) % total === i)
+      // отсчёт: загораются последние доли перед началом круга
+      cell.classList.toggle('is-counting', !!counting && i >= 4 + position.beat && i < 4)
+      cell.classList.toggle('is-bar', i % 4 === 0)
+    })
+  }
+  return { root: node, update }
 }
 
 /* ---------- Время суток ---------- */
@@ -349,6 +449,8 @@ function Transport({ onRecord, onPlay, onStop, onDownload, onClear }) {
   const root = el('nav', 'Transport')
   root.setAttribute('aria-label', 'Запись и воспроизведение')
   root.append(buttons.record, buttons.play, buttons.stop, time, buttons.download, buttons.clear)
+  buttons.record.title = 'Записать всю пьесу (R)'
+  buttons.play.title = 'Слушать запись (Space)'
 
   function update(take) {
     const { state } = take

@@ -162,6 +162,31 @@ function EffectModule({ param, index, name, controls, aside }) {
   return node
 }
 
+/* Segmented — выбор одного из нескольких значений */
+function Segmented({ param, title, options, value, onChange }) {
+  const node = el('div', 'Segmented')
+  node.dataset.param = param
+  if (title) node.title = title
+  const buttons = options.map((option) => {
+    const button = el('button', 'Segmented__Option', option.label)
+    button.type = 'button'
+    button.onclick = () => {
+      value = option.value
+      render()
+      onChange(value)
+    }
+    return button
+  })
+  const render = () =>
+    buttons.forEach((b, i) => b.setAttribute('aria-pressed', options[i].value === value))
+  node.append(...buttons)
+  render()
+  return {
+    root: node,
+    setDisabled: (disabled) => buttons.forEach((b) => (b.disabled = disabled))
+  }
+}
+
 /* Stepper — число со стрелками −/+ (темп) */
 function Stepper({ param, name, value, min, max, step = 1, onChange }) {
   const node = el(

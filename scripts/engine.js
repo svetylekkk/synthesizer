@@ -133,28 +133,47 @@ const Engine = (() => {
     return SCORE.day[Math.round(p) % n]
   }
 
+  /* Каждая прозвучавшая нота сообщается слушателю (лупер её записывает):
+     onHit(voice, index, notes, time, duration). Ноты «держащих» голосов
+     сообщаются при отпускании, ноты циклов — на каждом шаге. */
+  let onHit = () => {}
+  const heldSince = {} // 'drops:3' → время нажатия
+
   // Цикл стартует с ближайшей доли сетки — первой нотой рисунка, поэтому
   // даже короткое касание звучит, а рисунок остаётся в темпе.
   const loops = {} // 'stars:2' → { sequence, startTick }
 
   function attack(voice, index, notes) {
     const v = voices[voice]
-    if (v.play === 'hold') return v.synth.triggerAttack(notes)
+    const id = `${voice}:${index}`
+    if (v.play === 'hold') {
+      heldSince[id] = Tone.now()
+      return v.synth.triggerAttack(notes)
+    }
     if (Tone.Transport.state !== 'started') Tone.Transport.start()
     const { steps, subdivision, length } = v.loop
     const startTick = Tone.Transport.getTicksAtTime(Tone.Transport.nextSubdivision(subdivision))
     const sequence = new Tone.Sequence(
-      (time, note) => note && v.synth.triggerAttackRelease(note, length, time),
+      (time, note) => {
+        if (!note) return
+        v.synth.triggerAttackRelease(note, length, time)
+        onHit(voice, index, [note], time, Tone.Time(length).toSeconds())
+      },
       steps(notes),
       subdivision
     ).start(`${startTick}i`)
-    loops[`${voice}:${index}`] = { sequence, startTick }
+    loops[id] = { sequence, startTick }
   }
 
   function release(voice, index, notes) {
     const v = voices[voice]
-    if (v.play === 'hold') return v.synth.triggerRelease(notes)
     const id = `${voice}:${index}`
+    if (v.play === 'hold') {
+      v.synth.triggerRelease(notes)
+      onHit(voice, index, notes, heldSince[id], Tone.now() - heldSince[id])
+      delete heldSince[id]
+      return
+    }
     if (!loops[id]) return
     const { sequence, startTick } = loops[id]
     delete loops[id]
@@ -163,5 +182,20 @@ const Engine = (() => {
     setTimeout(() => sequence.dispose(), 1000)
   }
 
-  return { master, voices, waveform, recorder, meters, attack, release, setDay }
+  // Сыграть готовую ноту в заданное время — так звучат лупы и повтор записи
+  const play = (voice, notes, duration, time) =>
+    voices[voice].synth.triggerAttackRelease(notes, duration, time)
+
+  return {
+    master,
+    voices,
+    waveform,
+    recorder,
+    meters,
+    attack,
+    release,
+    play,
+    setDay,
+    listen: (fn) => (onHit = fn)
+  }
 })()

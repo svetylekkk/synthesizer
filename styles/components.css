@@ -215,6 +215,31 @@
   grid-template-columns: 48px 48px;
 }
 
+/* ---------- Segmented ---------- */
+.Segmented {
+  display: flex;
+  padding: 2px;
+  border-radius: var(--radius-pill);
+  background: var(--paper);
+}
+.Segmented__Option {
+  min-width: 28px;
+  height: 28px;
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+  font-weight: 800;
+}
+.Segmented__Option[aria-pressed='true'] {
+  background: var(--ink);
+  color: var(--paper);
+}
+.Segmented__Option:disabled {
+  cursor: default;
+}
+.Segmented__Option:disabled:not([aria-pressed='true']) {
+  opacity: 0.35;
+}
+
 /* ---------- Stepper ---------- */
 .Stepper {
   display: flex;
